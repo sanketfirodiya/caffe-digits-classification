@@ -27,39 +27,45 @@
 /// THE SOFTWARE.
 
 import UIKit
-import Vision
 
-class PhotoFullScreenViewController: UIViewController {
-  static let nibName = "PhotoFullScreenViewController"
+extension UIImage {
+  public func pixelBuffer(width: Int, height: Int) -> CVPixelBuffer? {
+    var maybePixelBuffer: CVPixelBuffer?
+    let attrs = [kCVPixelBufferCGImageCompatibilityKey: kCFBooleanTrue,
+                 kCVPixelBufferCGBitmapContextCompatibilityKey: kCFBooleanTrue]
+    let status = CVPixelBufferCreate(kCFAllocatorDefault,
+                                     width,
+                                     height,
+                                     kCVPixelFormatType_32ARGB,
+                                     attrs as CFDictionary,
+                                     &maybePixelBuffer)
 
-  var image: UIImage?
-  var model = Dolphins()
-  
-  @IBOutlet weak var label: UILabel!
-  @IBOutlet weak var spinner: UIActivityIndicatorView!
-  @IBOutlet weak var imageView: UIImageView!
-  
-  override func viewDidLoad() {
-    super.viewDidLoad()
-    spinner.startAnimating()
-    if let image = image {
-      imageView.image = image
-      classifyImage(image: image)
+    guard status == kCVReturnSuccess, let pixelBuffer = maybePixelBuffer else {
+      return nil
     }
-  }
 
-  private func classifyImage(image: UIImage) {
-    DispatchQueue.global(qos: .background).async { [weak self] in
-      guard let strongSelf = self else { return }
-      
-      if let pixelBuffer = image.pixelBuffer(width: 227, height: 227), let prediction = try? strongSelf.model.prediction(data: pixelBuffer) {
-        DispatchQueue.main.async {
-          strongSelf.spinner.stopAnimating()
-          strongSelf.spinner.isHidden = true
-          strongSelf.label.isHidden = false
-          strongSelf.label.text = prediction.classLabel
-        }
-      }
+    CVPixelBufferLockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
+    let pixelData = CVPixelBufferGetBaseAddress(pixelBuffer)
+
+    guard let context = CGContext(data: pixelData,
+                                  width: width,
+                                  height: height,
+                                  bitsPerComponent: 8,
+                                  bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer),
+                                  space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue)
+      else {
+        return nil
     }
+
+    context.translateBy(x: 0, y: CGFloat(height))
+    context.scaleBy(x: 1, y: -1)
+
+    UIGraphicsPushContext(context)
+    self.draw(in: CGRect(x: 0, y: 0, width: width, height: height))
+    UIGraphicsPopContext()
+    CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
+
+    return pixelBuffer
   }
 }

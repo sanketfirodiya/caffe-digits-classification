@@ -30,24 +30,24 @@ import UIKit
 
 class PhotoGalleryDataSource: NSObject {
 
-  static let itemList = PhotoGalleryDataSource.catList + PhotoGalleryDataSource.dogList
+  static let itemList = PhotoGalleryDataSource.dolphinList + PhotoGalleryDataSource.seahorseList
 
-  private static let catList: [String] = {
-    var catNames = [String]()
-    for i in 0...9 {
-      catNames.append("cat.\(i)")
+  private static let dolphinList: [String] = {
+    var dolphinNames = [String]()
+    for i in 1...10 {
+      dolphinNames.append("dolphin\(i)")
     }
 
-    return catNames
+    return dolphinNames
   }()
 
-  private static let dogList: [String] = {
-    var dogNames = [String]()
-    for i in 0...9 {
-      dogNames.append("dog.\(i)")
+  private static let seahorseList: [String] = {
+    var seahorseNames = [String]()
+    for i in 1...10 {
+      seahorseNames.append("seahorse\(i)")
     }
     
-    return dogNames
+    return seahorseNames
   }()
 
   static func numberOfSections(numberOfItemsPerSection: Int) -> Int {
